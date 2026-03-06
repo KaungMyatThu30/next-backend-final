@@ -1,7 +1,7 @@
 // TODO: Students must implement CRUD for Book here, similar to Item.
 // Example: GET (list all books), POST (create book)
 
-import { ROLE, badRequest, requireAuth, requireRole } from "@/lib/auth";
+import { ROLE, badRequest, readJsonBody, requireAuth, requireRole } from "@/lib/auth";
 import { getCorsHeaders } from "@/lib/cors";
 import { getClientPromise } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
@@ -68,7 +68,12 @@ export async function POST(req) {
     return auth.error;
   }
 
-  const data = await req.json();
+  const parsedBody = await readJsonBody(req);
+  if (parsedBody.error) {
+    return parsedBody.error;
+  }
+
+  const data = parsedBody.data;
   const { title, author, quantity, location } = data;
 
   if (!title || !author || quantity === undefined || !location) {

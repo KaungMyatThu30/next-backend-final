@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { ROLE, badRequest, requireAuth, requireRole } from "@/lib/auth";
+import { ROLE, badRequest, readJsonBody, requireAuth, requireRole } from "@/lib/auth";
 import { getCorsHeaders } from "@/lib/cors";
 import { getClientPromise } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
@@ -74,7 +74,12 @@ export async function PATCH(req, context) {
     return badRequest(req, "Invalid id");
   }
 
-  const data = await req.json();
+  const parsedBody = await readJsonBody(req);
+  if (parsedBody.error) {
+    return parsedBody.error;
+  }
+
+  const data = parsedBody.data;
   const update = {};
 
   if (data.title !== undefined) {

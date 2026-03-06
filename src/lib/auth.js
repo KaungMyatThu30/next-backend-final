@@ -21,6 +21,15 @@ export function badRequest(req, message = "Bad request") {
   return NextResponse.json({ message }, { status: 400, headers: getCorsHeaders(req) });
 }
 
+export async function readJsonBody(req) {
+  try {
+    const data = await req.json();
+    return { data };
+  } catch (_) {
+    return { error: badRequest(req, "Invalid JSON body") };
+  }
+}
+
 export function parseTokenFromRequest(req) {
   const token = req.cookies.get("token")?.value;
   if (!token) {

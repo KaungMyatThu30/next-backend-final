@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { ROLE, badRequest, requireAuth, requireRole } from "@/lib/auth";
+import { ROLE, badRequest, readJsonBody, requireAuth, requireRole } from "@/lib/auth";
 import { getCorsHeaders } from "@/lib/cors";
 import { getClientPromise } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
@@ -54,7 +54,12 @@ export async function POST(req) {
     return auth.error;
   }
 
-  const payload = await req.json();
+  const parsedBody = await readJsonBody(req);
+  if (parsedBody.error) {
+    return parsedBody.error;
+  }
+
+  const payload = parsedBody.data;
   const { bookId, targetDate } = payload;
 
   if (!bookId || !targetDate) {

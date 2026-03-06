@@ -1,7 +1,8 @@
 
 // REFERENCE: This file is provided as a user registration example.
 // Students must implement authentication and role-based logic as required in the exam.
-import corsHeaders from "@/lib/cors";
+import { ROLE, badRequest, readJsonBody, requireRole } from "@/lib/auth";
+import { getCorsHeaders } from "@/lib/cors";
 import { getClientPromise } from "@/lib/mongodb";
 import bcrypt from "bcrypt";
 import { NextResponse } from "next/server";
@@ -9,8 +10,25 @@ import { NextResponse } from "next/server";
 const DB_NAME = process.env.MONGODB_DB || "library_management";
 const USER_COLLECTION = process.env.USER_COLLECTION || "users";
 
+export async function OPTIONS(req) {
+  return new Response(null, {
+    status: 200,
+    headers: getCorsHeaders(req),
+  });
+}
+
 export async function  POST (req) {
-  const data = await req.json();
+  const auth = requireRole(req, ROLE.ADMIN);
+  if (auth.error) {
+    return auth.error;
+  }
+
+  const parsedBody = await readJsonBody(req);
+  if (parsedBody.error) {
+    return parsedBody.error;
+  }
+
+  const data = parsedBody.data;
   const username = data.username;
   const email = data.email;
   const password = data.password;
@@ -18,12 +36,7 @@ export async function  POST (req) {
   const lastname = data.lastname;
 
   if (!username || !email || !password) {
-    return NextResponse.json({
-      message: "Missing mandatory data"
-    }, {
-      status: 400,
-      headers: corsHeaders
-    })
+    return badRequest(req, "Missing mandatory data");
   }
 
   try {
@@ -44,11 +57,11 @@ export async function  POST (req) {
       id: result.insertedId
     }, {
       status: 200,
-      headers: corsHeaders
+      headers: getCorsHeaders(req)
     });
   }
-  catch (exception) {
-    const errorMsg = exception.toString();
+  catch (error) {
+    const errorMsg = String(error || "");
     let displayErrorMsg = "";
     if (errorMsg.includes("duplicate")) {
       if (errorMsg.includes("username")) {
@@ -62,7 +75,7 @@ export async function  POST (req) {
       message: displayErrorMsg
     }, {
       status: 400,
-      headers: corsHeaders
+      headers: getCorsHeaders(req)
     })
   }
 

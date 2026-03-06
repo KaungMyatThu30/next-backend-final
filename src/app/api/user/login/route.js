@@ -4,6 +4,7 @@
 import { getCorsHeaders } from "@/lib/cors";
 import { ensureIndexes } from "@/lib/ensureIndexes";
 import { getClientPromise } from "@/lib/mongodb";
+import { readJsonBody } from "@/lib/auth";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
@@ -20,7 +21,12 @@ export async function OPTIONS(req) {
 }
 
 export async function POST(req) {
-  const data = await req.json();
+  const parsedBody = await readJsonBody(req);
+  if (parsedBody.error) {
+    return parsedBody.error;
+  }
+
+  const data = parsedBody.data;
   const { email, password } = data;
 
   if (!email || !password) {
