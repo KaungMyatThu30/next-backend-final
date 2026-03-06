@@ -1,7 +1,7 @@
 // REFERENCE: This file is provided as a user registration example.
 // Students must implement authentication and role-based logic as required in the exam.
 import { requireAuth } from "@/lib/auth";
-import corsHeaders from "@/lib/cors";
+import { getCorsHeaders } from "@/lib/cors";
 import { getClientPromise } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 
@@ -11,7 +11,7 @@ const USER_COLLECTION = process.env.USER_COLLECTION || "users";
 export async function OPTIONS(req) {
   return new Response(null, {
     status: 200,
-    headers: corsHeaders,
+    headers: getCorsHeaders(req),
   });
 }
 
@@ -37,11 +37,11 @@ export async function GET (req) {
         message: "Profile not found"
       }, {
         status: 404,
-        headers: corsHeaders
+        headers: getCorsHeaders(req)
       });
     }
     return NextResponse.json(profile, {
-      headers: corsHeaders
+      headers: getCorsHeaders(req)
     });
   }
   catch (_) {
@@ -49,7 +49,7 @@ export async function GET (req) {
       message: "Internal server error"
     }, {
       status: 500,
-      headers: corsHeaders
+      headers: getCorsHeaders(req)
     });
   }
 }

@@ -2,7 +2,7 @@
 // Example: GET (list all books), POST (create book)
 
 import { ROLE, badRequest, requireAuth, requireRole } from "@/lib/auth";
-import corsHeaders from "@/lib/cors";
+import { getCorsHeaders } from "@/lib/cors";
 import { getClientPromise } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 
@@ -12,7 +12,7 @@ const BOOK_COLLECTION = process.env.BOOK_COLLECTION || "books";
 export async function OPTIONS(req) {
   return new Response(null, {
     status: 200,
-    headers: corsHeaders,
+    headers: getCorsHeaders(req),
   });
 }
 
@@ -43,17 +43,21 @@ export async function GET(req) {
     const client = await getClientPromise();
     const db = client.db(DB_NAME);
     const books = await db.collection(BOOK_COLLECTION).find(query).sort({ createdAt: -1 }).toArray();
+    const normalizedBooks = books.map((book) => ({
+      ...book,
+      _id: String(book._id),
+    }));
 
-    return NextResponse.json(books, {
+    return NextResponse.json(normalizedBooks, {
       status: 200,
-      headers: corsHeaders,
+      headers: getCorsHeaders(req),
     });
   } catch (_) {
     return NextResponse.json({
       message: "Internal server error"
     }, {
       status: 500,
-      headers: corsHeaders,
+      headers: getCorsHeaders(req),
     });
   }
 }
@@ -68,12 +72,12 @@ export async function POST(req) {
   const { title, author, quantity, location } = data;
 
   if (!title || !author || quantity === undefined || !location) {
-    return badRequest("Missing mandatory data");
+    return badRequest(req, "Missing mandatory data");
   }
 
   const parsedQty = Number(quantity);
   if (!Number.isInteger(parsedQty) || parsedQty < 0) {
-    return badRequest("Quantity must be a non-negative integer");
+    return badRequest(req, "Quantity must be a non-negative integer");
   }
 
   try {
@@ -96,14 +100,14 @@ export async function POST(req) {
       message: "Book created"
     }, {
       status: 201,
-      headers: corsHeaders,
+      headers: getCorsHeaders(req),
     });
   } catch (_) {
     return NextResponse.json({
       message: "Internal server error"
     }, {
       status: 500,
-      headers: corsHeaders,
+      headers: getCorsHeaders(req),
     });
   }
 }

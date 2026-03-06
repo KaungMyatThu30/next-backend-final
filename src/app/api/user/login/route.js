@@ -1,7 +1,7 @@
 
 // REFERENCE: This file is provided as a user login example.
 // Students must implement authentication and role-based logic as required in the exam.
-import corsHeaders from "@/lib/cors";
+import { getCorsHeaders } from "@/lib/cors";
 import { ensureIndexes } from "@/lib/ensureIndexes";
 import { getClientPromise } from "@/lib/mongodb";
 import bcrypt from "bcrypt";
@@ -15,7 +15,7 @@ const USER_COLLECTION = process.env.USER_COLLECTION || "users";
 export async function OPTIONS(req) {
   return new Response(null, {
     status: 200,
-    headers: corsHeaders,
+    headers: getCorsHeaders(req),
   });
 }
 
@@ -28,7 +28,7 @@ export async function POST(req) {
       message: "Missing email or password"
     }, {
       status: 400,
-      headers: corsHeaders
+      headers: getCorsHeaders(req)
     });
   }
 
@@ -42,7 +42,7 @@ export async function POST(req) {
         message: "Invalid email or password"
       }, {
         status: 401,
-        headers: corsHeaders
+        headers: getCorsHeaders(req)
       });
     }
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -51,7 +51,7 @@ export async function POST(req) {
         message: "Invalid email or password"
       }, {
         status: 401,
-        headers: corsHeaders
+        headers: getCorsHeaders(req)
       });
     }
     // Generate JWT
@@ -73,7 +73,7 @@ export async function POST(req) {
       }
     }, {
       status: 200,
-      headers: corsHeaders
+      headers: getCorsHeaders(req)
     });
     response.cookies.set("token", token, {
       httpOnly: true,
@@ -88,7 +88,7 @@ export async function POST(req) {
       message: "Internal server error"
     }, {
       status: 500,
-      headers: corsHeaders
+      headers: getCorsHeaders(req)
     });
   }
 }

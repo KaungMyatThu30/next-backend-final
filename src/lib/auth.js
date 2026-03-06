@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
-import corsHeaders from "@/lib/cors";
+import { getCorsHeaders } from "@/lib/cors";
 
 const JWT_SECRET = process.env.JWT_SECRET || "mydefaulyjwtsecret";
 
@@ -9,16 +9,16 @@ export const ROLE = {
   USER: "USER",
 };
 
-export function unauthorized(message = "Unauthorized") {
-  return NextResponse.json({ message }, { status: 401, headers: corsHeaders });
+export function unauthorized(req, message = "Unauthorized") {
+  return NextResponse.json({ message }, { status: 401, headers: getCorsHeaders(req) });
 }
 
-export function forbidden(message = "Forbidden") {
-  return NextResponse.json({ message }, { status: 403, headers: corsHeaders });
+export function forbidden(req, message = "Forbidden") {
+  return NextResponse.json({ message }, { status: 403, headers: getCorsHeaders(req) });
 }
 
-export function badRequest(message = "Bad request") {
-  return NextResponse.json({ message }, { status: 400, headers: corsHeaders });
+export function badRequest(req, message = "Bad request") {
+  return NextResponse.json({ message }, { status: 400, headers: getCorsHeaders(req) });
 }
 
 export function parseTokenFromRequest(req) {
@@ -36,7 +36,7 @@ export function parseTokenFromRequest(req) {
 export function requireAuth(req) {
   const user = parseTokenFromRequest(req);
   if (!user) {
-    return { error: unauthorized("Authentication required") };
+    return { error: unauthorized(req, "Authentication required") };
   }
   return { user };
 }
@@ -48,7 +48,7 @@ export function requireRole(req, roles) {
   }
   const roleList = Array.isArray(roles) ? roles : [roles];
   if (!roleList.includes(auth.user.role)) {
-    return { error: forbidden("Insufficient permissions") };
+    return { error: forbidden(req, "Insufficient permissions") };
   }
   return auth;
 }

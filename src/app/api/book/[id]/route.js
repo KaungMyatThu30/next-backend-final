@@ -1,9 +1,6 @@
-// TODO: Students must implement CRUD for Book here, similar to Item.
-// Example: GET (get book by id), PATCH (update), DELETE (remove)
-
 import { ObjectId } from "mongodb";
 import { ROLE, badRequest, requireAuth, requireRole } from "@/lib/auth";
-import corsHeaders from "@/lib/cors";
+import { getCorsHeaders } from "@/lib/cors";
 import { getClientPromise } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 
@@ -13,19 +10,19 @@ const BOOK_COLLECTION = process.env.BOOK_COLLECTION || "books";
 export async function OPTIONS(req) {
   return new Response(null, {
     status: 200,
-    headers: corsHeaders,
+    headers: getCorsHeaders(req),
   });
 }
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   const auth = requireAuth(req);
   if (auth.error) {
     return auth.error;
   }
 
-  const id = params?.id;
+  const { id } = await context.params;
   if (!ObjectId.isValid(id)) {
-    return badRequest("Invalid id");
+    return badRequest(req, "Invalid id");
   }
 
   try {
@@ -37,37 +34,44 @@ export async function GET(req, { params }) {
     const client = await getClientPromise();
     const db = client.db(DB_NAME);
     const book = await db.collection(BOOK_COLLECTION).findOne(query);
+
     if (!book) {
-      return NextResponse.json({
-        message: "Book not found"
-      }, {
-        status: 404,
-        headers: corsHeaders,
-      });
+      return NextResponse.json(
+        { message: "Book not found" },
+        {
+          status: 404,
+          headers: getCorsHeaders(req),
+        }
+      );
     }
-    return NextResponse.json(book, {
+
+    return NextResponse.json({
+      ...book,
+      _id: String(book._id),
+    }, {
       status: 200,
-      headers: corsHeaders,
+      headers: getCorsHeaders(req),
     });
   } catch (_) {
-    return NextResponse.json({
-      message: "Internal server error"
-    }, {
-      status: 500,
-      headers: corsHeaders,
-    });
+    return NextResponse.json(
+      { message: "Internal server error" },
+      {
+        status: 500,
+        headers: getCorsHeaders(req),
+      }
+    );
   }
 }
 
-export async function PATCH(req, { params }) {
+export async function PATCH(req, context) {
   const auth = requireRole(req, ROLE.ADMIN);
   if (auth.error) {
     return auth.error;
   }
 
-  const id = params?.id;
+  const { id } = await context.params;
   if (!ObjectId.isValid(id)) {
-    return badRequest("Invalid id");
+    return badRequest(req, "Invalid id");
   }
 
   const data = await req.json();
@@ -85,13 +89,13 @@ export async function PATCH(req, { params }) {
   if (data.quantity !== undefined) {
     const parsedQty = Number(data.quantity);
     if (!Number.isInteger(parsedQty) || parsedQty < 0) {
-      return badRequest("Quantity must be a non-negative integer");
+      return badRequest(req, "Quantity must be a non-negative integer");
     }
     update.quantity = parsedQty;
   }
 
   if (Object.keys(update).length === 0) {
-    return badRequest("No valid field to update");
+    return badRequest(req, "No valid field to update");
   }
 
   update.updatedAt = new Date();
@@ -106,37 +110,42 @@ export async function PATCH(req, { params }) {
     );
 
     if (!result.matchedCount) {
-      return NextResponse.json({
-        message: "Book not found"
-      }, {
-        status: 404,
-        headers: corsHeaders,
-      });
+      return NextResponse.json(
+        { message: "Book not found" },
+        {
+          status: 404,
+          headers: getCorsHeaders(req),
+        }
+      );
     }
 
-    return NextResponse.json({ message: "Book updated" }, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return NextResponse.json(
+      { message: "Book updated" },
+      {
+        status: 200,
+        headers: getCorsHeaders(req),
+      }
+    );
   } catch (_) {
-    return NextResponse.json({
-      message: "Internal server error"
-    }, {
-      status: 500,
-      headers: corsHeaders,
-    });
+    return NextResponse.json(
+      { message: "Internal server error" },
+      {
+        status: 500,
+        headers: getCorsHeaders(req),
+      }
+    );
   }
 }
 
-export async function DELETE(req, { params }) {
+export async function DELETE(req, context) {
   const auth = requireRole(req, ROLE.ADMIN);
   if (auth.error) {
     return auth.error;
   }
 
-  const id = params?.id;
+  const { id } = await context.params;
   if (!ObjectId.isValid(id)) {
-    return badRequest("Invalid id");
+    return badRequest(req, "Invalid id");
   }
 
   try {
@@ -152,24 +161,31 @@ export async function DELETE(req, { params }) {
         },
       }
     );
+
     if (!result.matchedCount) {
-      return NextResponse.json({
-        message: "Book not found"
-      }, {
-        status: 404,
-        headers: corsHeaders,
-      });
+      return NextResponse.json(
+        { message: "Book not found" },
+        {
+          status: 404,
+          headers: getCorsHeaders(req),
+        }
+      );
     }
-    return NextResponse.json({ message: "Book deleted" }, {
-      status: 200,
-      headers: corsHeaders,
-    });
+
+    return NextResponse.json(
+      { message: "Book deleted" },
+      {
+        status: 200,
+        headers: getCorsHeaders(req),
+      }
+    );
   } catch (_) {
-    return NextResponse.json({
-      message: "Internal server error"
-    }, {
-      status: 500,
-      headers: corsHeaders,
-    });
+    return NextResponse.json(
+      { message: "Internal server error" },
+      {
+        status: 500,
+        headers: getCorsHeaders(req),
+      }
+    );
   }
 }
